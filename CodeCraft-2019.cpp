@@ -9,6 +9,7 @@ using namespace std;
 
 
 struct ListNode{
+//用链表来存储节点和边，这一部是为了表示图，同时链表的路径搜索应该是比较简单的，用递归就可以做出来
     int crossNumber;//交叉路口的序号/id
 
     //左右上下四条相连路的id
@@ -37,9 +38,34 @@ struct ListNode{
 };
 
 void CreatRoadMap(vector<vector<int> > RoadData,vector<vector<int> > CrossData, ListNode* MapHead){
+//建立一个图来表示交通路线
+
+}
+
+void carPathSearch(int startCross,int endCross,vecor<int> Path){
+//搜索从一个路口到另一个路口的所有可行路径，这里只给出路径，时间的计算根据具体的车来确定，这样可以节省很大一部分时间
+
+}
+
+
+void carPlanSearch(vector<vector<int> > carData, vector<vector<vector<int> > >* AvaiablePath){
+//搜索所有车的所有可行路径，用一个三维向量表示，第一维是carId，第二维是可行路线，第三维是路径。
 
 
 }
+
+void PlanSelectRandom(vector<vector<vector<int> > > AvaiablePath){
+//选择最后的方案，直接随机
+}
+
+void PlanSelectIndivual(vector<vector<vector<int> > > AvaiablePath, vector<vector<int> >* PlanPath){
+//选择最后的方案，不考虑整体，只考虑每辆车的最短时间
+}
+
+int PlanEvaluate(vector<vector<int> >* PlanPath){
+
+}
+
 
 
 bool txtDataRead(string carPath, vector<vector<int> > &carData, int cols){
