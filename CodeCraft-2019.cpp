@@ -30,6 +30,12 @@ struct ListNode{
     int DownRoadMaxSpeed;
     int LeftRoadMaxSpeed;
 
+    //四条相连路的最快速度
+    int UpRoadChannel;
+    int RightRoadChannel;
+    int DownRoadChannel;
+    int LeftRoadChannel;
+
     //四个相连的节点
     ListNode* UpCross;
     ListNode* RightCross;
@@ -41,7 +47,6 @@ void CreatRoadMap(vector<vector<int> > RoadData,vector<vector<int> > CrossData, 
 //建立一个图来表示交通路线
     //首先对每个路口建立一个节点
     //cross #(id,roadId,roadId,roadId,roadId) 路口是从1开始编号的
-    //road #(id,length,speed,channel,from,to,isDuplex)
     int crossNum = CrossData.size();
     (*CrossNodeVector).resize(crossNum);
     for(int i=0;i<crossNum;i++){
@@ -63,7 +68,65 @@ void CreatRoadMap(vector<vector<int> > RoadData,vector<vector<int> > CrossData, 
         //指针初始化
         TempNode = NULL;
     }
-    //接着借助路的信息把节点连接起来
+
+    //接着借助路的信息把节点连接起来,同时补充路的长度和限速，要在这里考虑单向双向的问题
+    int roadNum = RoadData.size();
+    //road #(id,length,speed,channel,from,to,isDuplex)
+    for(int i=0;i<roadNum;i++){
+        int RoadId = RoadData[i][0];
+        int RoadStart = RoadData[i][4];
+        int RoadEnd = RoadData[i][5];
+        int isDuplex = RoadData[i][6];
+        // 在起始点的路口里查找id相同的路
+        ListNode* StartNode = (*CrossNodeVector)[RoadStart-1];//取去起始节点
+        ListNode* EndNode = (*CrossNodeVector)[RoadEnd-1];//取去终点节点
+        if(StartNode->UpRoadId == RoadId){
+            StartNode->UpCross = EndNode;//节点
+            StartNode->UpRoadLength = RoadData[i][1];//路长
+            StartNode->UpRoadMaxSpeed = RoadData[i][2];//限速
+            StartNode->UpRoadChannel = RoadData[i][3];//车道数
+            if(isDuplex==1){//对于双向道而言上下关系，左右关系互为颠倒
+                EndNode->DownCross = StartNode;
+                EndNode->DownRoadLength = RoadData[i][1];
+                EndNode->DownRoadMaxSpeed = RoadData[i][2];
+                EndNode->DownRoadChannel = RoadData[i][3];
+            }
+        }else if(StartNode->RightRoadId == RoadId){
+            StartNode->RightCross = EndNode;//节点
+            StartNode->RightRoadLength = RoadData[i][1];//路长
+            StartNode->RightRoadMaxSpeed = RoadData[i][2];//限速
+            StartNode->RightRoadChannel = RoadData[i][3];//车道数
+            if(isDuplex==1){//对于双向道而言上下关系，左右关系互为颠倒
+                EndNode->LeftCross = StartNode;
+                EndNode->LeftRoadLength = RoadData[i][1];
+                EndNode->LeftRoadMaxSpeed = RoadData[i][2];
+                EndNode->LeftRoadChannel = RoadData[i][3];
+            }
+        }else if(StartNode->DownRoadId == RoadId){
+            StartNode->DownCross = EndNode;
+            StartNode->DownRoadLength = RoadData[i][1];
+            StartNode->DownRoadMaxSpeed = RoadData[i][2];
+            StartNode->DownRoadChannel = RoadData[i][3];
+            if(isDuplex==1){//对于双向道而言上下关系，左右关系互为颠倒
+                EndNode->UpCross = StartNode;
+                EndNode->UpRoadLength = RoadData[i][1];
+                EndNode->UpRoadMaxSpeed = RoadData[i][2];
+                EndNode->UpRoadChannel = RoadData[i][3];
+            }
+        }else{
+            StartNode->LeftCross = EndNode;//节点
+            StartNode->LeftRoadLength = RoadData[i][1];//路长
+            StartNode->LeftRoadMaxSpeed = RoadData[i][2];//限速
+            StartNode->LeftRoadChannel = RoadData[i][3];//车道数
+            if(isDuplex==1){//对于双向道而言上下关系，左右关系互为颠倒
+                EndNode->RightCross = StartNode;
+                EndNode->RightRoadLength = RoadData[i][1];
+                EndNode->RightRoadMaxSpeed = RoadData[i][2];
+                EndNode->RightRoadChannel = RoadData[i][3];
+            }
+        }
+
+    }
 }
 
 void carPathSearch(int startCross,int endCross,vector<int> Path){
@@ -181,7 +244,7 @@ int main()
     bool roadDataReadStatus = txtDataRead( roadPath,  roadData,7);
     //(id,length,speed,channel,from,to,isDuplex)
     bool crossDataReadStatus = txtDataRead( crossPath, crossData,5);
-    dataShow(crossData);
+    dataShow(roadData);
     //将数据转换成图和节点矩阵，双向图，有环图
 
     vector<int> isVisted;//记录节点是否被访问过，避免在遍历图的时候因为环构成死循环。
@@ -192,6 +255,10 @@ int main()
     printf("the size of crossNodeVector is:%d\n",crossNodeVector.size());
     for(int i=0;i<crossNodeVector.size();i++){
         printf("%d\t",(crossNodeVector[i])->crossNumber);
+    }
+    printf("\n");
+    for(int i=0;i<crossNodeVector.size();i++){
+        printf("%d\t",(crossNodeVector[i])->LeftRoadLength);
     }
     //根据图寻找可行路径，Dijstra找最短路径。
 
