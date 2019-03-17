@@ -43,7 +43,7 @@ struct ListNode{
     ListNode* LeftCross;
 };
 
-void CreatRoadMap(vector<vector<int> > RoadData,vector<vector<int> > CrossData, ListNode* MapHead,vector<ListNode*  > *CrossNodeVector){
+void CreatRoadMap(vector<vector<int> > RoadData,vector<vector<int> > CrossData,vector<ListNode*  > *CrossNodeVector){
 //建立一个图来表示交通路线
     //首先对每个路口建立一个节点
     //cross #(id,roadId,roadId,roadId,roadId) 路口是从1开始编号的
@@ -129,14 +129,33 @@ void CreatRoadMap(vector<vector<int> > RoadData,vector<vector<int> > CrossData, 
     }
 }
 
-void carPathSearch(int startCross,int endCross,vector<int> Path){
+void carPathSearch(int startCross, int endCross,vector<ListNode*  > CrossNodeVector,
+                   vector<vector<int> > *Path, int CurrentPathSum,vector<int > isVisted){//这里不需要改变链表，传形参,isVisted,CurrentPahtSum也只用形参
+//注意传进来的isVisted必须为全零，也就是初始状态
 //搜索从一个路口到另一个路口的所有可行路径，这里只给出路径，时间的计算根据具体的车来确定，这样可以节省很大一部分时间
+//可行路径的数量不确定，同时在递归的过程中需要记录路线或者说是记录经过的节点
+//为了避免死循环还需要记录节点是否访问过的状态数组，在单条路径中不能重复访问，访问完成后要重置状态
+//需要提前给Path分配空间，也就是resize一下，不然直接调用(*Path)[0]会崩
 
+    (*Path)[CurrentPathSum].push_back(startCross);
+    isVisted[startCross] = 1;
+    //如果两个路口相连
+    if(CrossNodeVector[startCross]->UpCross->crossNumber == endCross){
+        CurrentPathSum++;
+        (*Path).resize(CurrentPathSum+1);//需要多分配一个来存储下一条路线
+    }
+    //直接相连的情况还需不需要考虑拐个弯的连接？
+
+
+
+    (*Path)[CurrentPathSum].pop_back();
+    isVisted[startCross] = 0;
 }
 
 
 void carPlanSearch(vector<vector<int> > carData, vector<vector<vector<int> > >* AvaiablePath){
 //搜索所有车的所有可行路径，用一个三维向量表示，第一维是carId，第二维是可行路线，第三维是路径。
+//考虑到实际车的数量可能会比节点数量的平方n^2更多，很有可能存在重复的路线，那么就存下来每次计算过的节点对之间的可行路径，下一次出现重复路线就直接调用
 
 
 }
@@ -244,14 +263,13 @@ int main()
     bool roadDataReadStatus = txtDataRead( roadPath,  roadData,7);
     //(id,length,speed,channel,from,to,isDuplex)
     bool crossDataReadStatus = txtDataRead( crossPath, crossData,5);
-    dataShow(roadData);
+    dataShow(carData);
     //将数据转换成图和节点矩阵，双向图，有环图
 
-    vector<int> isVisted;//记录节点是否被访问过，避免在遍历图的时候因为环构成死循环。
     vector<ListNode*> crossNodeVector;// 用于存储每一个节点的指针，用于寻找路径，也可能其实用不着，
                                     //根据路口的序号就可以判断是不是到达目的地
     ListNode* mapHead = NULL;
-    CreatRoadMap(roadData,crossData, mapHead, &crossNodeVector);
+    CreatRoadMap(roadData,crossData, &crossNodeVector);
     printf("the size of crossNodeVector is:%d\n",crossNodeVector.size());
     for(int i=0;i<crossNodeVector.size();i++){
         printf("%d\t",(crossNodeVector[i])->crossNumber);
@@ -261,7 +279,11 @@ int main()
         printf("%d\t",(crossNodeVector[i])->LeftRoadLength);
     }
     //根据图寻找可行路径，Dijstra找最短路径。
-
+    vector<int> isVisted;//记录节点是否被访问过，避免在遍历图的时候因为环构成死循环。
+    isVisted.resize(crossNodeVector.size());
+    for(int i=0;i<isVisted.size();i++){
+        isVisted[i] = 0;
+    }
 
 
 
