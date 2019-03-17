@@ -12,37 +12,61 @@ struct ListNode{
 //用链表来存储节点和边，这一部是为了表示图，同时链表的路径搜索应该是比较简单的，用递归就可以做出来
     int crossNumber;//交叉路口的序号/id
 
-    //左右上下四条相连路的id
-    int LeftRoadId;//左边路的id
-    int RightRoadId;//右边路的id
+    //四条相连路的id,顺时针方向，上右下左
     int UpRoadId;//上面路的id
+    int RightRoadId;//右边路的id
     int DownRoadId;//下面路的id
+    int LeftRoadId;//左边路的id
 
-    //左右上下四条相连路的长度
-    int LeftRoadLength;
-    int RightRoadLength;
+    //四条相连路的长度
     int UpRoadLength;
+    int RightRoadLength;
     int DownRoadLength;
+    int LeftRoadLength;
 
-    //左右上下四条相连路的最快速度
-    int LeftRoadMaxSpeed;
-    int RightRoadMaxSpeed;
+    //四条相连路的最快速度
     int UpRoadMaxSpeed;
+    int RightRoadMaxSpeed;
     int DownRoadMaxSpeed;
+    int LeftRoadMaxSpeed;
 
-    //左右上下四个相连的节点
-    ListNode* LeftCross;
-    ListNode* RightCross;
+    //四个相连的节点
     ListNode* UpCross;
+    ListNode* RightCross;
     ListNode* DownCross;
+    ListNode* LeftCross;
 };
 
-void CreatRoadMap(vector<vector<int> > RoadData,vector<vector<int> > CrossData, ListNode* MapHead){
+void CreatRoadMap(vector<vector<int> > RoadData,vector<vector<int> > CrossData, ListNode* MapHead,vector<ListNode*  > *CrossNodeVector){
 //建立一个图来表示交通路线
-
+    //首先对每个路口建立一个节点
+    //cross #(id,roadId,roadId,roadId,roadId) 路口是从1开始编号的
+    //road #(id,length,speed,channel,from,to,isDuplex)
+    int crossNum = CrossData.size();
+    (*CrossNodeVector).resize(crossNum);
+    for(int i=0;i<crossNum;i++){
+        ListNode *TempNode = new ListNode();//新建一个节点
+        //存储相连的路
+        TempNode->crossNumber = CrossData[i][0];
+        TempNode->UpRoadId = CrossData[i][1];
+        TempNode->RightRoadId = CrossData[i][2];
+        TempNode->DownRoadId = CrossData[i][3];
+        TempNode->LeftRoadId = CrossData[i][4];
+        //相邻的路口先置空
+        TempNode->UpCross = NULL;
+        TempNode->RightCross = NULL;
+        TempNode->DownCross = NULL;
+        TempNode->LeftCross = NULL;
+        //将节点指针存储下来
+       // printf("this is the %dth iter\n",i);
+        (*CrossNodeVector)[CrossData[i][0]-1] = TempNode;//存放位置与路口id有关
+        //指针初始化
+        TempNode = NULL;
+    }
+    //接着借助路的信息把节点连接起来
 }
 
-void carPathSearch(int startCross,int endCross,vecor<int> Path){
+void carPathSearch(int startCross,int endCross,vector<int> Path){
 //搜索从一个路口到另一个路口的所有可行路径，这里只给出路径，时间的计算根据具体的车来确定，这样可以节省很大一部分时间
 
 }
@@ -157,16 +181,18 @@ int main()
     bool roadDataReadStatus = txtDataRead( roadPath,  roadData,7);
     //(id,length,speed,channel,from,to,isDuplex)
     bool crossDataReadStatus = txtDataRead( crossPath, crossData,5);
-    dataShow(carData);
+    dataShow(crossData);
     //将数据转换成图和节点矩阵，双向图，有环图
 
     vector<int> isVisted;//记录节点是否被访问过，避免在遍历图的时候因为环构成死循环。
-    vector<ListNode*> CrossNodesVector;// 用于存储每一个节点的指针，用于寻找路径，也可能其实用不着，
+    vector<ListNode*> crossNodeVector;// 用于存储每一个节点的指针，用于寻找路径，也可能其实用不着，
                                     //根据路口的序号就可以判断是不是到达目的地
-
-
-
-
+    ListNode* mapHead = NULL;
+    CreatRoadMap(roadData,crossData, mapHead, &crossNodeVector);
+    printf("the size of crossNodeVector is:%d\n",crossNodeVector.size());
+    for(int i=0;i<crossNodeVector.size();i++){
+        printf("%d\t",(crossNodeVector[i])->crossNumber);
+    }
     //根据图寻找可行路径，Dijstra找最短路径。
 
 
