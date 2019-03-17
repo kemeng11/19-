@@ -11,4 +11,6 @@
 2019/03/17 14:36<br>
 实现了CreatRoadMap的部分功能：将节点数据CrossData完全存储到ListNode里，但是ListNode之间并没有相互连接，每个ListNode的指针都存储到了vector CrossNodeVector里，由于Cross的命名是从1到N，所有对应到CCrossNodeVector第0个元素存储的是1个路口的 信息，以此类推，接下来需要将roadData存储到ListNode里，也就是每条路的长度，限速，以及节点之间的连接需要完成<br>
 2019/03/17 16:37<br>
-完善了函数CreatRoatMap的后一部分，读取路的数据文件，完善节点的信息，同时将节点之间连接起来
+完善了函数CreatRoatMap的后一部分，读取路的数据文件，完善节点的信息，同时将节点之间连接起来<br>
+2019/03/17 23:33<br>
+删除了函数CreatRoatMap的一个多余参数MapHead，增加了查找两个路口之间所有可行路线的部分代码，但是在递归的细节上没写完<br>
