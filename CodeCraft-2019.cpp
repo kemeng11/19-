@@ -129,27 +129,82 @@ void CreatRoadMap(vector<vector<int> > RoadData,vector<vector<int> > CrossData,v
     }
 }
 
-void carPathSearch(int startCross, int endCross,vector<ListNode*  > CrossNodeVector,
-                   vector<vector<int> > *Path, int CurrentPathSum,vector<int > isVisted){//这里不需要改变链表，传形参,isVisted,CurrentPahtSum也只用形参
+void carPathSearch(int startCross, int endCross,vector<ListNode*  > *CrossNodeVector,
+                   vector<vector<int> > *Path, int *CurrentPathSum,vector<int > *isVisted, vector<int > *isReachable){//这里不需要改变链表，传形参,isVisted,CurrentPahtSum也只用形参
 //注意传进来的isVisted必须为全零，也就是初始状态
 //搜索从一个路口到另一个路口的所有可行路径，这里只给出路径，时间的计算根据具体的车来确定，这样可以节省很大一部分时间
 //可行路径的数量不确定，同时在递归的过程中需要记录路线或者说是记录经过的节点
-//为了避免死循环还需要记录节点是否访问过的状态数组，在单条路径中不能重复访问，访问完成后要重置状态
+//为了避免死循环还需要记录节点是否访问过的状态数组，在单条路径中不能重复访问，访问完成后要重置状态，代码目前陷入了死循环！！！！！！！也可能是递归栈爆了
 //需要提前给Path分配空间，也就是resize一下，不然直接调用(*Path)[0]会崩
+//cross从1开始计数！！！
+    printf("redy to push %d\n",startCross);
+    int CurrentPathSumTemp = (*CurrentPathSum);
 
-    (*Path)[CurrentPathSum].push_back(startCross);
-    isVisted[startCross] = 1;
-    //如果两个路口相连
-    if(CrossNodeVector[startCross]->UpCross->crossNumber == endCross){
-        CurrentPathSum++;
-        (*Path).resize(CurrentPathSum+1);//需要多分配一个来存储下一条路线
+     printf("*********redy to set push Path %d\n",(*Path)[(*CurrentPathSum)].size());
+    (*Path)[(*CurrentPathSum)].push_back(startCross);
+
+     printf("redy to set isVisited %d\n",startCross);
+    (*isVisted)[startCross-1] = 1;//设置节点为已经访问
+    //检验参数的传递
+  //  printf("the current startCross is:%d\n",startCross);
+    //printf("the size of Path is:%d\n",(*Path).size());
+    //printf("the content of Path is:%d\n",(*Path)[0][0]);
+   // printf("the next Upnode of startCross is:%d\n",CrossNodeVector[startCross-1]->UpCross->crossNumber);
+   // printf("the next Rightnode of startCross is:%d\n",CrossNodeVector[startCross-1]->RightCross->crossNumber);
+   // printf("the next Downnode of startCross is:%d\n",CrossNodeVector[startCross-1]->DownCross->crossNumber);
+    //printf("the next Leftnode of startCross is:%d\n",CrossNodeVector[startCross-1]->LeftCross->crossNumber);
+
+    //如果两个路口相连，找到一条路径,需要先判断节点存在在进行条件
+    if(((*CrossNodeVector)[startCross-1]->UpCross&&(*CrossNodeVector)[startCross-1]->UpCross->crossNumber == endCross)||
+       ((*CrossNodeVector)[startCross-1]->RightCross&&(*CrossNodeVector)[startCross-1]->RightCross->crossNumber == endCross)||
+       ((*CrossNodeVector)[startCross-1]->DownCross&&(*CrossNodeVector)[startCross-1]->DownCross->crossNumber == endCross)||
+       ((*CrossNodeVector)[startCross-1]->LeftCross&&(*CrossNodeVector)[startCross-1]->LeftCross->crossNumber == endCross)){
+
+        (*isVisted)[endCross-1] = 1;//终点也设为被访问过，避免后面判断麻烦
+        (*CurrentPathSum)++;
+        (*Path).resize((*CurrentPathSum)+1);//需要多分配一个来存储下一条路线，但是需要将之前的路径给复制下来
+        for(int i=0;i<(*Path)[(*CurrentPathSum-1)].size();i++){//在新的路径序列里拷贝之前的节点路线
+            (*Path)[*CurrentPathSum].push_back((*Path)[*CurrentPathSum-1][i]);
+        }
+        (*Path)[*CurrentPathSum-1].push_back(endCross);//在之前的路线中放入终点
+        printf("one path is found\n");
+
     }
-    //直接相连的情况还需不需要考虑拐个弯的连接？
-
-
-
-    (*Path)[CurrentPathSum].pop_back();
-    isVisted[startCross] = 0;
+    printf("to find the nearby corss\n");
+    //直接相连的情况还需不需要考虑拐个弯的连接？需要考虑
+    //如果相邻节点不为空，且没被访问过
+  //  printf("will visit the next nodes\n");
+    if(((*CrossNodeVector)[startCross-1]->UpCross!=NULL)&&
+       (!(*isVisted)[(*CrossNodeVector)[startCross-1]->UpCross->crossNumber-1])&&(*isReachable)[startCross-1]){
+        printf("will enter the UpRoad\n");
+        carPathSearch((*CrossNodeVector)[startCross-1]->UpCross->crossNumber, endCross, CrossNodeVector, Path, CurrentPathSum, isVisted,isReachable);
+    }
+    if(((*CrossNodeVector)[startCross-1]->RightCross!=NULL)&&
+       (!(*isVisted)[(*CrossNodeVector)[startCross-1]->RightCross->crossNumber-1])&&(*isReachable)[startCross-1]){
+        printf("will enter the RightRoad\n");
+        carPathSearch((*CrossNodeVector)[startCross-1]->RightCross->crossNumber, endCross, CrossNodeVector, Path, CurrentPathSum, isVisted,isReachable);
+    }
+    if(((*CrossNodeVector)[startCross-1]->DownCross!=NULL)&&
+       (!(*isVisted)[(*CrossNodeVector)[startCross-1]->DownCross->crossNumber-1])&&(*isReachable)[startCross-1]){
+        printf("will enter the DownRoad\n");
+        carPathSearch((*CrossNodeVector)[startCross-1]->DownCross->crossNumber, endCross, CrossNodeVector, Path, CurrentPathSum, isVisted,isReachable);
+    }
+    if(((*CrossNodeVector)[startCross-1]->LeftCross!=NULL)&&
+       (!(*isVisted)[(*CrossNodeVector)[startCross-1]->LeftCross->crossNumber-1])&&(*isReachable)[startCross-1]){
+        printf("will enter the RightRoad\n");
+        carPathSearch((*CrossNodeVector)[startCross-1]->LeftCross->crossNumber, endCross, CrossNodeVector, Path, CurrentPathSum, isVisted,isReachable);
+    }
+    //等下递归的时候好像不会返回改变后的路径数
+    //完成当前节点的搜索后,如果可行路径的数量没变那么这两个节点之间是不可行的
+    if((*CurrentPathSum)==CurrentPathSumTemp){//如果没找到新的路径
+        (*isReachable)[startCross-1]=0;
+        printf("this cross cannot come to end %d\n",startCross);
+    }
+    printf("will go back!!!!!!!!!\n");
+    //如果找到一条路径了就不要再乱pop了！！！！！！！！！！，没找到路径的情况下才需要pop，但是需要继承之前的路径信息
+    (*Path)[(*CurrentPathSum)].pop_back();
+    (*isVisted)[startCross-1] = 0;
+    return;
 }
 
 
@@ -284,9 +339,19 @@ int main()
     for(int i=0;i<isVisted.size();i++){
         isVisted[i] = 0;
     }
-
-
-
+    vector<int> isReachable;
+    isReachable.resize(crossNodeVector.size());
+    //  建立向量，表明两节点之间是否有可能到达
+    for(int i=0;i<isReachable.size();i++){
+        isReachable[i] = 1;
+    }
+    printf("\n");
+    vector<vector<int > > Path;
+    Path.resize(1);
+    int CurrentPathSum = 0;
+    carPathSearch(1, 2, &crossNodeVector, &Path, &CurrentPathSum, &isVisted, &isReachable);
+    printf("path search finished\n");
+    dataShow(Path);
 
 
 	// TODO:read input filebuf
