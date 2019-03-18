@@ -208,10 +208,45 @@ void carPathSearch(int startCross, int endCross,vector<ListNode*  > *CrossNodeVe
 }
 
 
-void carPlanSearch(vector<vector<int> > carData, vector<vector<vector<int> > >* AvaiablePath){
+void carPlanSearch(vector<vector<int> > carData, vector<ListNode*  > crossNodeVector, vector<vector<vector<int> > >* AvaiablePath){
 //搜索所有车的所有可行路径，用一个三维向量表示，第一维是carId，第二维是可行路线，第三维是路径。
 //考虑到实际车的数量可能会比节点数量的平方n^2更多，很有可能存在重复的路线，那么就存下来每次计算过的节点对之间的可行路径，下一次出现重复路线就直接调用
+//(id,from,to,speed,planTime)
+    int carNum = carData.size();
+    (*AvaiablePath).resize(carNum);
+    int SatrtCross = 0;
+    int EndCross = 0;
 
+    vector<int> isVisted;//记录节点是否被访问过，避免在遍历图的时候因为环构成死循环。
+    vector<int> isReachable;
+    isVisted.resize(crossNodeVector.size());
+    isReachable.resize(crossNodeVector.size());
+    for(int i=0;i<isVisted.size();i++){
+        isVisted[i] = 0;
+        isReachable[i] = 1;
+    }
+    vector<vector<int > > Path;
+    Path.resize(1);
+    int CurrentPathSum = 0;
+
+    for(int i=0;i<carNum;i++){
+        SatrtCross = carData[i][1];
+        EndCross = carData[i][2];
+        carPathSearch(SatrtCross, EndCross, &crossNodeVector, &Path, &CurrentPathSum, &isVisted, &isReachable);
+        //需要把Path里多余的一行给踢掉，或者用CurrentPathSum来控制选择那些元素，是不是pop_back就好了
+        if(Path.size()>CurrentPathSum){
+            Path.pop_back();
+        }
+        (*AvaiablePath)[i] = Path;//这样赋值会不会出问题
+        //用完之后需要把Path给删掉，CurrentPathSum，isVisted，isReachable都需要初始化
+        Path.clear();//clear不够，需要给他resize
+        Path.resize(1);
+        CurrentPathSum = 0;
+        for(int ii=0;ii<isVisted.size();ii++){
+            isVisted[ii] = 0;
+            isReachable[ii] = 1;
+        }
+    }
 
 }
 
@@ -323,7 +358,7 @@ int main()
 
     vector<ListNode*> crossNodeVector;// 用于存储每一个节点的指针，用于寻找路径，也可能其实用不着，
                                     //根据路口的序号就可以判断是不是到达目的地
-    ListNode* mapHead = NULL;
+    //ListNode* mapHead = NULL;
     CreatRoadMap(roadData,crossData, &crossNodeVector);
     printf("the size of crossNodeVector is:%d\n",crossNodeVector.size());
     for(int i=0;i<crossNodeVector.size();i++){
@@ -352,7 +387,9 @@ int main()
     carPathSearch(1, 2, &crossNodeVector, &Path, &CurrentPathSum, &isVisted, &isReachable);
     printf("path search finished\n");
     dataShow(Path);
-
+    printf("the CurrentPathSum is :%d\n",CurrentPathSum);
+    vector<vector<vector<int> > > AvaiablePath;
+    carPlanSearch(carData, crossNodeVector, &AvaiablePath);
 
 	// TODO:read input filebuf
 	// TODO:process
