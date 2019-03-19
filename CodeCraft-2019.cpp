@@ -2,7 +2,8 @@
 #include "iostream"
 #include<fstream>
 #include<vector>
-#include <cassert>
+#include<cassert>
+#include<stdlib.h>
 using namespace std;
 
 #define VNAME(value) (#value)
@@ -134,16 +135,17 @@ void carPathSearch(int startCross, int endCross,vector<ListNode*  > *CrossNodeVe
 //注意传进来的isVisted必须为全零，也就是初始状态
 //搜索从一个路口到另一个路口的所有可行路径，这里只给出路径，时间的计算根据具体的车来确定，这样可以节省很大一部分时间
 //可行路径的数量不确定，同时在递归的过程中需要记录路线或者说是记录经过的节点
-//为了避免死循环还需要记录节点是否访问过的状态数组，在单条路径中不能重复访问，访问完成后要重置状态，代码目前陷入了死循环！！！！！！！也可能是递归栈爆了
+//为了避免死循环还需要记录节点是否访问过的状态数组，在单条路径中不能重复访问，访问完成后要重置状态，代码目前陷入了死循环
+//！！！！！！！也可能是递归栈爆了。是找到新的路径之后新的vector被重置，push——back出栈
 //需要提前给Path分配空间，也就是resize一下，不然直接调用(*Path)[0]会崩
 //cross从1开始计数！！！
-    printf("redy to push %d\n",startCross);
+    //printf("redy to push %d\n",startCross);
     int CurrentPathSumTemp = (*CurrentPathSum);
 
-     printf("*********redy to set push Path %d\n",(*Path)[(*CurrentPathSum)].size());
+    // printf("*********redy to set push Path %d\n",(*Path)[(*CurrentPathSum)].size());
     (*Path)[(*CurrentPathSum)].push_back(startCross);
 
-     printf("redy to set isVisited %d\n",startCross);
+    // printf("redy to set isVisited %d\n",startCross);
     (*isVisted)[startCross-1] = 1;//设置节点为已经访问
     //检验参数的传递
   //  printf("the current startCross is:%d\n",startCross);
@@ -167,46 +169,45 @@ void carPathSearch(int startCross, int endCross,vector<ListNode*  > *CrossNodeVe
             (*Path)[*CurrentPathSum].push_back((*Path)[*CurrentPathSum-1][i]);
         }
         (*Path)[*CurrentPathSum-1].push_back(endCross);//在之前的路线中放入终点
-        printf("one path is found\n");
+       // printf("one path is found\n");
 
     }
-    printf("to find the nearby corss\n");
+    //printf("to find the nearby corss\n");
     //直接相连的情况还需不需要考虑拐个弯的连接？需要考虑
     //如果相邻节点不为空，且没被访问过
   //  printf("will visit the next nodes\n");
     if(((*CrossNodeVector)[startCross-1]->UpCross!=NULL)&&
        (!(*isVisted)[(*CrossNodeVector)[startCross-1]->UpCross->crossNumber-1])&&(*isReachable)[startCross-1]){
-        printf("will enter the UpRoad\n");
+        //printf("will enter the UpRoad\n");
         carPathSearch((*CrossNodeVector)[startCross-1]->UpCross->crossNumber, endCross, CrossNodeVector, Path, CurrentPathSum, isVisted,isReachable);
     }
     if(((*CrossNodeVector)[startCross-1]->RightCross!=NULL)&&
        (!(*isVisted)[(*CrossNodeVector)[startCross-1]->RightCross->crossNumber-1])&&(*isReachable)[startCross-1]){
-        printf("will enter the RightRoad\n");
+        //printf("will enter the RightRoad\n");
         carPathSearch((*CrossNodeVector)[startCross-1]->RightCross->crossNumber, endCross, CrossNodeVector, Path, CurrentPathSum, isVisted,isReachable);
     }
     if(((*CrossNodeVector)[startCross-1]->DownCross!=NULL)&&
        (!(*isVisted)[(*CrossNodeVector)[startCross-1]->DownCross->crossNumber-1])&&(*isReachable)[startCross-1]){
-        printf("will enter the DownRoad\n");
+       // printf("will enter the DownRoad\n");
         carPathSearch((*CrossNodeVector)[startCross-1]->DownCross->crossNumber, endCross, CrossNodeVector, Path, CurrentPathSum, isVisted,isReachable);
     }
     if(((*CrossNodeVector)[startCross-1]->LeftCross!=NULL)&&
        (!(*isVisted)[(*CrossNodeVector)[startCross-1]->LeftCross->crossNumber-1])&&(*isReachable)[startCross-1]){
-        printf("will enter the RightRoad\n");
+        //printf("will enter the RightRoad\n");
         carPathSearch((*CrossNodeVector)[startCross-1]->LeftCross->crossNumber, endCross, CrossNodeVector, Path, CurrentPathSum, isVisted,isReachable);
     }
     //等下递归的时候好像不会返回改变后的路径数
     //完成当前节点的搜索后,如果可行路径的数量没变那么这两个节点之间是不可行的
     if((*CurrentPathSum)==CurrentPathSumTemp){//如果没找到新的路径
         (*isReachable)[startCross-1]=0;
-        printf("this cross cannot come to end %d\n",startCross);
+       // printf("this cross cannot come to end %d\n",startCross);
     }
-    printf("will go back!!!!!!!!!\n");
+    //printf("will go back!!!!!!!!!\n");
     //如果找到一条路径了就不要再乱pop了！！！！！！！！！！，没找到路径的情况下才需要pop，但是需要继承之前的路径信息
     (*Path)[(*CurrentPathSum)].pop_back();
     (*isVisted)[startCross-1] = 0;
     return;
 }
-
 
 void carPlanSearch(vector<vector<int> > carData, vector<ListNode*  > crossNodeVector, vector<vector<vector<int> > >* AvaiablePath){
 //搜索所有车的所有可行路径，用一个三维向量表示，第一维是carId，第二维是可行路线，第三维是路径。
@@ -234,6 +235,8 @@ void carPlanSearch(vector<vector<int> > carData, vector<ListNode*  > crossNodeVe
         EndCross = carData[i][2];
         carPathSearch(SatrtCross, EndCross, &crossNodeVector, &Path, &CurrentPathSum, &isVisted, &isReachable);
         //需要把Path里多余的一行给踢掉，或者用CurrentPathSum来控制选择那些元素，是不是pop_back就好了
+        printf("the CurrentPathSum of %dth inter is :%d\n",i,CurrentPathSum);
+
         if(Path.size()>CurrentPathSum){
             Path.pop_back();
         }
@@ -250,14 +253,28 @@ void carPlanSearch(vector<vector<int> > carData, vector<ListNode*  > crossNodeVe
 
 }
 
-void PlanSelectRandom(vector<vector<vector<int> > > AvaiablePath){
+void PlanSelectRandom(vector<vector<int> > carData, vector<vector<vector<int> > > AvaiablePath,vector<vector<int > > *PlanPath){
 //选择最后的方案，直接随机
+    int carNum = carData.size();
+    (*PlanPath).resize(carNum);
+    int carId = 0;
+    int PlanTime = 0;
+    int choose = 0;
+    for(int i=0;i<carNum;i++){
+        carId =carData[i][0];
+        PlanTime = carData[i][4];
+        (*PlanPath)[i].push_back(carId);
+        (*PlanPath)[i].push_back(PlanTime);
+        //开始随机选路径
+        choose = rand()%AvaiablePath[i].size();
+        (*PlanPath)[i].insert((*PlanPath)[i].end(), AvaiablePath[i][choose].begin(), AvaiablePath[i][choose].end());
+    }
 }
 
-void PlanSelectIndivual(vector<vector<vector<int> > > AvaiablePath, vector<vector<int> >* PlanPath){
+void PlanSelectIndivual(vector<vector<int> > carData, vector<vector<vector<int> > > AvaiablePath, vector<vector<int> >* PlanPath){
 //选择最后的方案，不考虑整体，只考虑每辆车的最短时间
 }
-
+//将路线转换为期待的输出格式
 int PlanEvaluate(vector<vector<int> >* PlanPath){
 
 }
@@ -313,6 +330,27 @@ bool txtDataRead(string carPath, vector<vector<int> > &carData, int cols){
     printf("(%d,%d)\n",carData.size(), carData[0].size());
 }
 
+bool txtDataWrite(string answerPath,vector<vector<int > > PlanPath){
+    int carNum = PlanPath.size();
+    ofstream ofile;
+    ofile.open(answerPath.data(),ios::out);
+    ofile<<"#carId, starttime, RoadId...\n";
+    for(int i=0;i<carNum;i++){
+        ofile<<"(";
+        for(int j=0;j<PlanPath[i].size();j++){
+            ofile<<PlanPath[i][j];
+            if(j!=PlanPath[i].size()-1){
+                ofile<<", ";
+            }
+        }
+        ofile<<")";
+        if(i!=carNum-1){
+            ofile<<"\n";//不是最后一行就输出回车
+        }
+    }
+    ofile.close();
+    return true;
+}
 
 void dataShow(vector<vector<int> > arr){
 //用于查看二维向量内容
@@ -324,12 +362,29 @@ void dataShow(vector<vector<int> > arr){
     printf("(%d,%d)\n",row, arr[0].size());
     for(int i=0;i<row;i++){
         for(int j=0;j<arr[i].size();j++){
-            printf("%d\t",arr[i][j]);
+            printf("%d  ",arr[i][j]);
         }
         printf("\n");
     }
 }
 
+void dataShow3D(vector<vector<vector<int > > > arr){
+//用于查看二维向量内容
+    if(arr.empty()){
+        return;
+    }
+    int row = arr.size();
+    printf("the content of %s is:\n",VNAME(arr));
+    printf("(%d,%d)\n",row, arr[0].size());
+    for(int i=0;i<row;i++){
+        for(int j=0;j<arr[i].size();j++){
+            for(int k=0;k<arr[i][j].size();k++){
+                printf("%d ",arr[i][j][k]);
+            }
+            printf("\n");
+        }
+    }
+}
 
 
 
@@ -339,7 +394,7 @@ int main()
     string carPath = "F:\\比赛\\19年华为软件精英挑战赛\\config\\car.txt";
     string roadPath = "F:\\比赛\\19年华为软件精英挑战赛\\config\\road.txt";
     string crossPath = "F:\\比赛\\19年华为软件精英挑战赛\\config\\cross.txt";
-    string answerPath = "..\\config\\answer.txt";
+    string answerPath = "F:\\比赛\\19年华为软件精英挑战赛\\config\\answer.txt";
 
     //建立二维数组存储汽车信息，路口信息，交叉口信息，以及规划的路线
     vector<vector<int> > carData;
@@ -390,12 +445,15 @@ int main()
     printf("the CurrentPathSum is :%d\n",CurrentPathSum);
     vector<vector<vector<int> > > AvaiablePath;
     carPlanSearch(carData, crossNodeVector, &AvaiablePath);
-
 	// TODO:read input filebuf
 	// TODO:process
+	vector<vector<int > > PlanPath;
+	PlanSelectRandom( carData, AvaiablePath, &PlanPath);
+    dataShow(PlanPath);
+
 	// TODO:write output file
 	//将规划的路径进行输出
 //    bool answerDataWriteStatus = answerDataWrite( answerPath, plannedPath);
-
+    bool answerDataWriteStatus = txtDataWrite(answerPath,PlanPath);
 	return 0;
 }
