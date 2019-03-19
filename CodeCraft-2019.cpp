@@ -139,22 +139,9 @@ void carPathSearch(int startCross, int endCross,vector<ListNode*  > *CrossNodeVe
 //！！！！！！！也可能是递归栈爆了。是找到新的路径之后新的vector被重置，push——back出栈
 //需要提前给Path分配空间，也就是resize一下，不然直接调用(*Path)[0]会崩
 //cross从1开始计数！！！
-    //printf("redy to push %d\n",startCross);
     int CurrentPathSumTemp = (*CurrentPathSum);
-
-    // printf("*********redy to set push Path %d\n",(*Path)[(*CurrentPathSum)].size());
     (*Path)[(*CurrentPathSum)].push_back(startCross);
-
-    // printf("redy to set isVisited %d\n",startCross);
     (*isVisted)[startCross-1] = 1;//设置节点为已经访问
-    //检验参数的传递
-  //  printf("the current startCross is:%d\n",startCross);
-    //printf("the size of Path is:%d\n",(*Path).size());
-    //printf("the content of Path is:%d\n",(*Path)[0][0]);
-   // printf("the next Upnode of startCross is:%d\n",CrossNodeVector[startCross-1]->UpCross->crossNumber);
-   // printf("the next Rightnode of startCross is:%d\n",CrossNodeVector[startCross-1]->RightCross->crossNumber);
-   // printf("the next Downnode of startCross is:%d\n",CrossNodeVector[startCross-1]->DownCross->crossNumber);
-    //printf("the next Leftnode of startCross is:%d\n",CrossNodeVector[startCross-1]->LeftCross->crossNumber);
 
     //如果两个路口相连，找到一条路径,需要先判断节点存在在进行条件
     if(((*CrossNodeVector)[startCross-1]->UpCross&&(*CrossNodeVector)[startCross-1]->UpCross->crossNumber == endCross)||
@@ -172,37 +159,28 @@ void carPathSearch(int startCross, int endCross,vector<ListNode*  > *CrossNodeVe
        // printf("one path is found\n");
 
     }
-    //printf("to find the nearby corss\n");
-    //直接相连的情况还需不需要考虑拐个弯的连接？需要考虑
-    //如果相邻节点不为空，且没被访问过
-  //  printf("will visit the next nodes\n");
+
     if(((*CrossNodeVector)[startCross-1]->UpCross!=NULL)&&
        (!(*isVisted)[(*CrossNodeVector)[startCross-1]->UpCross->crossNumber-1])&&(*isReachable)[startCross-1]){
-        //printf("will enter the UpRoad\n");
         carPathSearch((*CrossNodeVector)[startCross-1]->UpCross->crossNumber, endCross, CrossNodeVector, Path, CurrentPathSum, isVisted,isReachable);
     }
     if(((*CrossNodeVector)[startCross-1]->RightCross!=NULL)&&
        (!(*isVisted)[(*CrossNodeVector)[startCross-1]->RightCross->crossNumber-1])&&(*isReachable)[startCross-1]){
-        //printf("will enter the RightRoad\n");
         carPathSearch((*CrossNodeVector)[startCross-1]->RightCross->crossNumber, endCross, CrossNodeVector, Path, CurrentPathSum, isVisted,isReachable);
     }
     if(((*CrossNodeVector)[startCross-1]->DownCross!=NULL)&&
        (!(*isVisted)[(*CrossNodeVector)[startCross-1]->DownCross->crossNumber-1])&&(*isReachable)[startCross-1]){
-       // printf("will enter the DownRoad\n");
         carPathSearch((*CrossNodeVector)[startCross-1]->DownCross->crossNumber, endCross, CrossNodeVector, Path, CurrentPathSum, isVisted,isReachable);
     }
     if(((*CrossNodeVector)[startCross-1]->LeftCross!=NULL)&&
        (!(*isVisted)[(*CrossNodeVector)[startCross-1]->LeftCross->crossNumber-1])&&(*isReachable)[startCross-1]){
-        //printf("will enter the RightRoad\n");
         carPathSearch((*CrossNodeVector)[startCross-1]->LeftCross->crossNumber, endCross, CrossNodeVector, Path, CurrentPathSum, isVisted,isReachable);
     }
-    //等下递归的时候好像不会返回改变后的路径数
     //完成当前节点的搜索后,如果可行路径的数量没变那么这两个节点之间是不可行的
     if((*CurrentPathSum)==CurrentPathSumTemp){//如果没找到新的路径
         (*isReachable)[startCross-1]=0;
        // printf("this cross cannot come to end %d\n",startCross);
     }
-    //printf("will go back!!!!!!!!!\n");
     //如果找到一条路径了就不要再乱pop了！！！！！！！！！！，没找到路径的情况下才需要pop，但是需要继承之前的路径信息
     (*Path)[(*CurrentPathSum)].pop_back();
     (*isVisted)[startCross-1] = 0;
@@ -211,7 +189,8 @@ void carPathSearch(int startCross, int endCross,vector<ListNode*  > *CrossNodeVe
 
 void carPlanSearch(vector<vector<int> > carData, vector<ListNode*  > crossNodeVector, vector<vector<vector<int> > >* AvaiablePath){
 //搜索所有车的所有可行路径，用一个三维向量表示，第一维是carId，第二维是可行路线，第三维是路径。
-//考虑到实际车的数量可能会比节点数量的平方n^2更多，很有可能存在重复的路线，那么就存下来每次计算过的节点对之间的可行路径，下一次出现重复路线就直接调用
+//考虑到实际车的数量可能会比节点数量的平方n^2更多，很有可能存在重复的路线，那么就存下来每次计算过的节点对之间的可行路径
+//下一次出现重复路线就直接调用，现在还没有实现所以运算效率堪忧
 //(id,from,to,speed,planTime)
     int carNum = carData.size();
     (*AvaiablePath).resize(carNum);
@@ -235,8 +214,7 @@ void carPlanSearch(vector<vector<int> > carData, vector<ListNode*  > crossNodeVe
         EndCross = carData[i][2];
         carPathSearch(SatrtCross, EndCross, &crossNodeVector, &Path, &CurrentPathSum, &isVisted, &isReachable);
         //需要把Path里多余的一行给踢掉，或者用CurrentPathSum来控制选择那些元素，是不是pop_back就好了
-        printf("the CurrentPathSum of %dth inter is :%d\n",i,CurrentPathSum);
-
+       // printf("the CurrentPathSum of %dth inter is :%d\n",i,CurrentPathSum);
         if(Path.size()>CurrentPathSum){
             Path.pop_back();
         }
@@ -288,11 +266,9 @@ bool txtDataRead(string carPath, vector<vector<int> > &carData, int cols){
 //cross #(id,roadId,roadId,roadId,roadId)
 //road #(id,length,speed,channel,from,to,isDuplex)
 
-//目前代码总是会多读一行数据不知道为什么,
-//在原先循坏停止条件为指针走到文件结束的情况下，会多读一行数据
-//目前先计算行数，再读文件
+//在原先循坏停止条件为指针走到文件结束的情况下，会多读一行数据 目前先计算行数，再读文件
 
-    std::cout << "Path is " << carPath << std::endl;
+    //std::cout << "Path is " << carPath << std::endl;
 
     ifstream infile;
     infile.open(carPath.data());
@@ -304,13 +280,13 @@ bool txtDataRead(string carPath, vector<vector<int> > &carData, int cols){
         rows++;
     }
     carData.resize(rows-1);//减去第一行注释，剩下的就是数据的总行数
-    printf("the rows is:%d\n",rows);
+   // printf("the rows is:%d\n",rows);
     infile.clear(std::ios::goodbit);
     infile.seekg(std::ios::beg);
     //
     string s;
     getline(infile,s);
-    cout<<s<<endl;
+    //cout<<s<<endl;
     //从括号开始读取有用内容
     char c;
     int number;
@@ -325,9 +301,9 @@ bool txtDataRead(string carPath, vector<vector<int> > &carData, int cols){
         }
         i++;
     }
-    printf("i = %d\n",i);
+   // printf("i = %d\n",i);
     infile.close();
-    printf("(%d,%d)\n",carData.size(), carData[0].size());
+    //printf("(%d,%d)\n",carData.size(), carData[0].size());
 }
 
 bool txtDataWrite(string answerPath,vector<vector<int > > PlanPath){
@@ -408,52 +384,24 @@ int main()
     bool roadDataReadStatus = txtDataRead( roadPath,  roadData,7);
     //(id,length,speed,channel,from,to,isDuplex)
     bool crossDataReadStatus = txtDataRead( crossPath, crossData,5);
-    dataShow(carData);
+    //dataShow(carData);
     //将数据转换成图和节点矩阵，双向图，有环图
-
     vector<ListNode*> crossNodeVector;// 用于存储每一个节点的指针，用于寻找路径，也可能其实用不着，
                                     //根据路口的序号就可以判断是不是到达目的地
     //ListNode* mapHead = NULL;
+//建立图
     CreatRoadMap(roadData,crossData, &crossNodeVector);
-    printf("the size of crossNodeVector is:%d\n",crossNodeVector.size());
-    for(int i=0;i<crossNodeVector.size();i++){
-        printf("%d\t",(crossNodeVector[i])->crossNumber);
-    }
-    printf("\n");
-    for(int i=0;i<crossNodeVector.size();i++){
-        printf("%d\t",(crossNodeVector[i])->LeftRoadLength);
-    }
-    //根据图寻找可行路径，Dijstra找最短路径。
-    vector<int> isVisted;//记录节点是否被访问过，避免在遍历图的时候因为环构成死循环。
-    isVisted.resize(crossNodeVector.size());
-    for(int i=0;i<isVisted.size();i++){
-        isVisted[i] = 0;
-    }
-    vector<int> isReachable;
-    isReachable.resize(crossNodeVector.size());
-    //  建立向量，表明两节点之间是否有可能到达
-    for(int i=0;i<isReachable.size();i++){
-        isReachable[i] = 1;
-    }
-    printf("\n");
-    vector<vector<int > > Path;
-    Path.resize(1);
-    int CurrentPathSum = 0;
-    carPathSearch(1, 2, &crossNodeVector, &Path, &CurrentPathSum, &isVisted, &isReachable);
-    printf("path search finished\n");
-    dataShow(Path);
-    printf("the CurrentPathSum is :%d\n",CurrentPathSum);
+//寻找可行路径
     vector<vector<vector<int> > > AvaiablePath;
     carPlanSearch(carData, crossNodeVector, &AvaiablePath);
-	// TODO:read input filebuf
-	// TODO:process
+//进行路径规划
 	vector<vector<int > > PlanPath;
 	PlanSelectRandom( carData, AvaiablePath, &PlanPath);
-    dataShow(PlanPath);
+   // dataShow(PlanPath);
 
 	// TODO:write output file
 	//将规划的路径进行输出
-//    bool answerDataWriteStatus = answerDataWrite( answerPath, plannedPath);
+//输出txt
     bool answerDataWriteStatus = txtDataWrite(answerPath,PlanPath);
 	return 0;
 }
