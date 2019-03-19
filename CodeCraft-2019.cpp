@@ -231,13 +231,36 @@ void carPlanSearch(vector<vector<int> > carData, vector<ListNode*  > crossNodeVe
 
 }
 
-void PlanSelectRandom(vector<vector<int> > carData, vector<vector<vector<int> > > AvaiablePath,vector<vector<int > > *PlanPath){
+void crossPath2RoadPath(vector<ListNode*  > crossNodeVector, vector<int > CrossPath,vector<int> *RoadPath){
+//将节点形式的路线转换为道路ID形式的路线
+    int RoadId = 0;
+    int CrossId = 0;
+    for(int i=0;i<CrossPath.size()-1;i++){
+        CrossId = CrossPath[i];
+        if((crossNodeVector[CrossId-1]->UpCross)&&(crossNodeVector[CrossId-1]->UpCross->crossNumber == CrossPath[i+1])){
+            RoadId = crossNodeVector[CrossId-1]->UpRoadId;
+        }else if((crossNodeVector[CrossId-1]->RightCross)&&(crossNodeVector[CrossId-1]->RightCross->crossNumber == CrossPath[i+1])){
+            RoadId = crossNodeVector[CrossId-1]->RightRoadId;
+        }else if((crossNodeVector[CrossId-1]->DownCross)&&(crossNodeVector[CrossId-1]->DownCross->crossNumber == CrossPath[i+1])){
+            RoadId = crossNodeVector[CrossId-1]->DownRoadId;
+        }else{
+            RoadId = crossNodeVector[CrossId-1]->LeftRoadId;
+        }
+        (*RoadPath).push_back(RoadId);
+    }
+}
+
+
+void PlanSelectRandom(vector<ListNode*  > crossNodeVector, vector<vector<int> > carData,
+                      vector<vector<vector<int> > > AvaiablePath,vector<vector<int > > *PlanPath){
 //选择最后的方案，直接随机
     int carNum = carData.size();
     (*PlanPath).resize(carNum);
     int carId = 0;
     int PlanTime = 0;
     int choose = 0;
+    vector<int> CrossPath;
+    vector<int> RoadPath;
     for(int i=0;i<carNum;i++){
         carId =carData[i][0];
         PlanTime = carData[i][4];
@@ -245,7 +268,12 @@ void PlanSelectRandom(vector<vector<int> > carData, vector<vector<vector<int> > 
         (*PlanPath)[i].push_back(PlanTime);
         //开始随机选路径
         choose = rand()%AvaiablePath[i].size();
-        (*PlanPath)[i].insert((*PlanPath)[i].end(), AvaiablePath[i][choose].begin(), AvaiablePath[i][choose].end());
+        //CrossPath.insert(CrossPath.begin(),AvaiablePath[i][choose].begin(),AvaiablePath[i][choose].end());
+        CrossPath = AvaiablePath[i][choose];
+        //将路径由节点形式转换为边的形式
+        crossPath2RoadPath(crossNodeVector, CrossPath, &RoadPath);
+        (*PlanPath)[i].insert((*PlanPath)[i].end(), RoadPath.begin(), RoadPath.end());
+        vector<int>().swap(RoadPath);
     }
 }
 
@@ -254,7 +282,7 @@ void PlanSelectIndivual(vector<vector<int> > carData, vector<vector<vector<int> 
 }
 //将路线转换为期待的输出格式
 int PlanEvaluate(vector<vector<int> >* PlanPath){
-
+    return 0;
 }
 
 
@@ -396,8 +424,8 @@ int main()
     carPlanSearch(carData, crossNodeVector, &AvaiablePath);
 //进行路径规划
 	vector<vector<int > > PlanPath;
-	PlanSelectRandom( carData, AvaiablePath, &PlanPath);
-   // dataShow(PlanPath);
+	PlanSelectRandom(crossNodeVector, carData, AvaiablePath, &PlanPath);
+   dataShow(PlanPath);
 
 	// TODO:write output file
 	//将规划的路径进行输出
