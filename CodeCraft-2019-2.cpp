@@ -187,7 +187,7 @@ void carPathSearch(int startCross, int endCross,vector<ListNode*  > *CrossNodeVe
     return;
 }
 
-void carPlanSearch(vector<vector<int> > carData, vector<ListNode*  > crossNodeVector, vector<vector<vector<int> > >* AvaiablePath){
+void carPlanSearch(vector<vector<int> > carData, vector<ListNode*  > crossNodeVector, vector<vector<vector<int> > >* AvaiablePath, vector<vector<int> > *PathDict){
 //搜索所有车的所有可行路径，用一个三维向量表示，第一维是carId，第二维是可行路线，第三维是路径。
 //考虑到实际车的数量可能会比节点数量的平方n^2更多，很有可能存在重复的路线，那么就存下来每次计算过的节点对之间的可行路径
 //下一次出现重复路线就直接调用，现在还没有实现所以运算效率堪忧
@@ -208,16 +208,25 @@ void carPlanSearch(vector<vector<int> > carData, vector<ListNode*  > crossNodeVe
     vector<vector<int > > Path;
     Path.resize(1);
     int CurrentPathSum = 0;
-
     for(int i=0;i<carNum;i++){
         SatrtCross = carData[i][1];
         EndCross = carData[i][2];
-        carPathSearch(SatrtCross, EndCross, &crossNodeVector, &Path, &CurrentPathSum, &isVisted, &isReachable);
+
         //需要把Path里多余的一行给踢掉，或者用CurrentPathSum来控制选择那些元素，是不是pop_back就好了
        // printf("the CurrentPathSum of %dth inter is :%d\n",i,CurrentPathSum);
-        if(Path.size()>CurrentPathSum){
-            Path.pop_back();
+
+
+        if((*PathDict)[SatrtCross-1][EndCross-1]==-1){//如果当前路径未被查找过,那么查找当前路径,并设立标记
+            carPathSearch(SatrtCross, EndCross, &crossNodeVector, &Path, &CurrentPathSum, &isVisted, &isReachable);
+            if(Path.size()>CurrentPathSum){
+                Path.pop_back();
+            }
+            (*PathDict)[SatrtCross-1][EndCross-1] = i;//记录下相同的路径存储到了第几辆车那里
+        }else{
+            int index = (*PathDict)[SatrtCross-1][EndCross-1];
+            Path = (*AvaiablePath)[index];
         }
+
         (*AvaiablePath)[i] = Path;//这样赋值会不会出问题
         //用完之后需要把Path给删掉，CurrentPathSum，isVisted，isReachable都需要初始化
         Path.clear();//clear不够，需要给他resize
@@ -421,7 +430,9 @@ int main()
     CreatRoadMap(roadData,crossData, &crossNodeVector);
 //寻找可行路径
     vector<vector<vector<int> > > AvaiablePath;
-    carPlanSearch(carData, crossNodeVector, &AvaiablePath);
+    vector<vector<int> > PathDict(crossNodeVector.size(), vector<int>(crossNodeVector.size(), -1));
+
+    carPlanSearch(carData, crossNodeVector, &AvaiablePath, &PathDict);
 //进行路径规划
 	vector<vector<int > > PlanPath;
 	PlanSelectRandom(crossNodeVector, carData, AvaiablePath, &PlanPath);
