@@ -4,9 +4,25 @@
 #include<vector>
 #include<cassert>
 #include<stdlib.h>
+#include<algorithm>
 using namespace std;
 
 #define VNAME(value) (#value)
+void dataShow(vector<vector<int> > arr){
+//用于查看二维向量内容
+    if(arr.empty()){
+        return;
+    }
+    int row = arr.size();
+    printf("the content of %s is:\n",VNAME(arr));
+    printf("(%d,%d)\n",row, arr[0].size());
+    for(int i=0;i<row;i++){
+        for(int j=0;j<arr[i].size();j++){
+            printf("%d  ",arr[i][j]);
+        }
+        printf("\n");
+    }
+}
 
 
 struct ListNode{
@@ -187,6 +203,73 @@ void carPathSearch(int startCross, int endCross,vector<ListNode*  > *CrossNodeVe
     return;
 }
 
+
+bool vectorCompare(vector<int> a, vector<int> b){
+    //从小到大进行排序
+
+    int aValue = 0;
+    int bValue = 0;
+    for(int i=1;i<a.size();i++){
+        aValue+=a[i];
+    }
+    for(int i=1;i<b.size();i++){
+        bValue+=b[i];
+    }
+    return aValue<bValue;
+}
+
+int SinglePathCost(vector<int > SinglePath,vector<ListNode*  > crossNodeVector){
+    int cost = 0;
+    int length = 0;
+    int speed = 0;
+    for(int i=0;i<SinglePath.size()-1;i++){
+        int CurrentCross = SinglePath[i];
+        int NextCross = SinglePath[i+1];
+        if(crossNodeVector[CurrentCross-1]->UpCross&&crossNodeVector[CurrentCross-1]->UpCross->crossNumber == NextCross){
+            length = crossNodeVector[CurrentCross-1]->UpRoadLength;
+            speed = crossNodeVector[CurrentCross-1]->UpRoadMaxSpeed;
+        }else if(crossNodeVector[CurrentCross-1]->RightCross&&crossNodeVector[CurrentCross-1]->RightCross->crossNumber == NextCross){
+            length = crossNodeVector[CurrentCross-1]->RightRoadLength;
+            speed = crossNodeVector[CurrentCross-1]->RightRoadMaxSpeed;
+        }else if(crossNodeVector[CurrentCross-1]->LeftCross&&crossNodeVector[CurrentCross-1]->LeftCross->crossNumber == NextCross){
+            length = crossNodeVector[CurrentCross-1]->LeftRoadLength;
+            speed = crossNodeVector[CurrentCross-1]->LeftRoadMaxSpeed;
+        }else{
+            length = crossNodeVector[CurrentCross-1]->DownRoadLength;
+            speed = crossNodeVector[CurrentCross-1]->DownRoadMaxSpeed;
+        }
+        cost+=length/speed;
+    }
+    return cost;
+
+}
+void sortPath( vector<vector<int > > *Path, vector<ListNode*  > crossNodeVector){
+//将搜索到的所有可行路径按照某种准则进行排序
+    int PathNum = (*Path).size();
+   // cout<<"the PathNUM is :"<<PathNum<<endl;
+    vector<vector<int > > PathTemp(PathNum);
+    vector<int > Temp;
+    //需要将Path按照某种准则进行转换，得到排序后的index
+    for(int i=0;i<PathNum;i++){
+        PathTemp[i].push_back(i);//存储索引
+        Temp.push_back(i);//存储索引
+        //计算当前路径的长度
+        int cost = SinglePathCost((*Path)[i],crossNodeVector);
+        PathTemp[i].push_back(cost);
+    }
+
+    sort(PathTemp.begin(),PathTemp.end(),vectorCompare);
+    //根据PathTemp的索引对Path进行排序
+
+    vector<vector<int > > PathSwapTemp2;
+    PathSwapTemp2.resize(PathNum);
+    for(int i=0;i<PathNum;i++){
+        int index = PathTemp[i][0];
+        PathSwapTemp2[i] = (*Path)[index];
+    }
+    (*Path).swap(PathSwapTemp2);
+
+}
 void carPlanSearch(vector<vector<int> > carData, vector<ListNode*  > crossNodeVector, vector<vector<vector<int> > >* AvaiablePath, vector<vector<int> > *PathDict){
 //搜索所有车的所有可行路径，用一个三维向量表示，第一维是carId，第二维是可行路线，第三维是路径。
 //考虑到实际车的数量可能会比节点数量的平方n^2更多，很有可能存在重复的路线，那么就存下来每次计算过的节点对之间的可行路径
@@ -221,6 +304,8 @@ void carPlanSearch(vector<vector<int> > carData, vector<ListNode*  > crossNodeVe
             if(Path.size()>CurrentPathSum){
                 Path.pop_back();
             }
+            //给Path排序
+            sortPath(&Path,crossNodeVector);
             (*PathDict)[SatrtCross-1][EndCross-1] = i;//记录下相同的路径存储到了第几辆车那里
         }else{
             int index = (*PathDict)[SatrtCross-1][EndCross-1];
@@ -286,9 +371,49 @@ void PlanSelectRandom(vector<ListNode*  > crossNodeVector, vector<vector<int> > 
     }
 }
 
-void PlanSelectIndivual(vector<vector<int> > carData, vector<vector<vector<int> > > AvaiablePath, vector<vector<int> >* PlanPath){
-//选择最后的方案，不考虑整体，只考虑每辆车的最短时间
+void RoadStatusUpdate(vector<int> *RoadStatus, vector<int> CarPath){
+//用节点形式的路径
+
 }
+void PlanSelectRandom(vector<ListNode*  > crossNodeVector, vector<vector<int> > carData,
+                      vector<vector<vector<int> > > AvaiablePath,vector<vector<int > > *PlanPath){
+//选择最后的方案，不考虑整体，只考虑每辆车的最短时间
+    int carNum = carData.size();
+    (*PlanPath).resize(carNum);
+    int carId = 0;
+    int PlanTime = 0;
+    int choose = 0;
+    //找到最早的出发时间，以及最晚的出发时间，同时给车增加一个标志位，-1表示未发车，
+    int PlanTimeMin = carData[0][4];
+    int PlanTimeMax = carData[0][4];
+    for(int i=0;i<carData.size();i++){
+        if(carData[i][4]<PlanTimeMin){
+            PlanTimeMin = carData[i][4];
+        }
+        if(carData[i][4]>PlanTimeMax){
+            PlanTimeMax = carData[i][4];
+        }
+        carData[i].push_back(-1);
+    }
+    int CurrentTime = PlanTimeMin;//当前时刻
+    //建立道路状态矩阵
+    vector<int> CrossPath;
+    vector<int> RoadPath;
+    for(int i=0;i<carNum;i++){
+        carId =carData[i][0];
+        PlanTime = carData[i][4];
+        (*PlanPath)[i].push_back(carId);
+        (*PlanPath)[i].push_back(PlanTime+2*i);//出发时间
+        //选择每辆车的最短路径
+        choose = 0;
+        CrossPath = AvaiablePath[i][choose];
+        //将路径由节点形式转换为边的形式
+        crossPath2RoadPath(crossNodeVector, CrossPath, &RoadPath);
+        (*PlanPath)[i].insert((*PlanPath)[i].end(), RoadPath.begin(), RoadPath.end());
+        vector<int>().swap(RoadPath);
+    }
+}
+
 //将路线转换为期待的输出格式
 int PlanEvaluate(vector<vector<int> >* PlanPath){
     return 0;
@@ -365,21 +490,6 @@ bool txtDataWrite(string answerPath,vector<vector<int > > PlanPath){
     return true;
 }
 
-void dataShow(vector<vector<int> > arr){
-//用于查看二维向量内容
-    if(arr.empty()){
-        return;
-    }
-    int row = arr.size();
-    printf("the content of %s is:\n",VNAME(arr));
-    printf("(%d,%d)\n",row, arr[0].size());
-    for(int i=0;i<row;i++){
-        for(int j=0;j<arr[i].size();j++){
-            printf("%d  ",arr[i][j]);
-        }
-        printf("\n");
-    }
-}
 
 void dataShow3D(vector<vector<vector<int > > > arr){
 //用于查看二维向量内容
@@ -404,9 +514,9 @@ void dataShow3D(vector<vector<vector<int > > > arr){
 int main()
 {
     //输入文件的路径，包括车辆，道路，交叉口信息，以及输出文件
-    string carPath = "F:\\比赛\\19年华为软件精英挑战赛\\1-map-training-1\\car.txt";
-    string roadPath = "F:\\比赛\\19年华为软件精英挑战赛\\1-map-training-1\\road.txt";
-    string crossPath = "F:\\比赛\\19年华为软件精英挑战赛\\1-map-training-1\\cross.txt";
+    string carPath = "F:\\比赛\\19年华为软件精英挑战赛\\config\\car.txt";
+    string roadPath = "F:\\比赛\\19年华为软件精英挑战赛\\config\\road.txt";
+    string crossPath = "F:\\比赛\\19年华为软件精英挑战赛\\config\\cross.txt";
     string answerPath = "F:\\比赛\\19年华为软件精英挑战赛\\1-map-training-1\\answer.txt";
 
     //建立二维数组存储汽车信息，路口信息，交叉口信息，以及规划的路线
@@ -435,8 +545,21 @@ int main()
     carPlanSearch(carData, crossNodeVector, &AvaiablePath, &PathDict);
 //进行路径规划
 	vector<vector<int > > PlanPath;
-	PlanSelectRandom(crossNodeVector, carData, AvaiablePath, &PlanPath);
-   dataShow(PlanPath);
+	PlanSelectIndivual(crossNodeVector, carData, AvaiablePath, &PlanPath);
+   // dataShow3D(AvaiablePath);
+
+/*
+    vector<vector<int > > PathTest;
+    for(int i=16;i<17;i++){
+        printf("***********************");
+        PathTest = AvaiablePath[i];
+        dataShow(PathTest);
+
+        sortPath(&PathTest,crossNodeVector);
+        dataShow(PathTest);
+
+    }
+*/
 
 	// TODO:write output file
 	//将规划的路径进行输出
