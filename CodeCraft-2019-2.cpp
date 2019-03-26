@@ -441,7 +441,7 @@ bool carInGarbage(vector<vector<int> > *carData){
     }
     return false;
 }
-bool isRoadCrowded(vector<vector<vector<int > > > RoadStatus, vector<int> ChoosenPath){//这里只需要判断如果增加一条路径会不会拥堵
+bool isRoadCrowded(vector<vector<vector<int > > > *RoadStatus, vector<int> ChoosenPath){//这里只需要判断如果增加一条路径会不会拥堵
     float load = 0.0;
     float threahold = 0.5;
     int capacity;
@@ -455,8 +455,8 @@ bool isRoadCrowded(vector<vector<vector<int > > > RoadStatus, vector<int> Choose
     */
     for(int i=0;i<ChoosenPath.size()-1;i++){
         //printf("i:%d\n",i);
-        capacity = RoadStatus[ChoosenPath[i]-1][ChoosenPath[i+1]-1][0]*RoadStatus[ChoosenPath[i]-1][ChoosenPath[i+1]-1][2];
-        RoadCarNum = RoadStatus[ChoosenPath[i]-1][ChoosenPath[i+1]-1][3]+1;
+        capacity = (*RoadStatus)[ChoosenPath[i]-1][ChoosenPath[i+1]-1][0]*(*RoadStatus)[ChoosenPath[i]-1][ChoosenPath[i+1]-1][2];
+        RoadCarNum = (*RoadStatus)[ChoosenPath[i]-1][ChoosenPath[i+1]-1][3]+1;
         load = (float)RoadCarNum/capacity;
         //printf("i:%d,the start is:%d the end is:%d\n",i,ChoosenPath[i],ChoosenPath[i+1]);
         //printf("the capacity is:%d the load is:%f\n",capacity,load);
@@ -525,14 +525,14 @@ void RoadStatusClear(vector<vector<vector<int > > > *RoadStatus){
     }
 
 }
-int RunTime(vector<vector<vector<int > > >RoadStatus, vector<int> ChoosenPath, int v){//输入的路径是节点形式的
+int RunTime(vector<vector<vector<int > > > *RoadStatus, vector<int> ChoosenPath, int v){//输入的路径是节点形式的
     int result = 1;
     int length = 1;
     int speed = 1;
     int MaxSpeed = 1;
     for(int i=0;i<ChoosenPath.size()-1;i++){
-        length = RoadStatus[ChoosenPath[i]-1][ChoosenPath[i+1]-1][0];
-        MaxSpeed = RoadStatus[ChoosenPath[i]-1][ChoosenPath[i+1]-1][1];
+        length = (*RoadStatus)[ChoosenPath[i]-1][ChoosenPath[i+1]-1][0];
+        MaxSpeed = (*RoadStatus)[ChoosenPath[i]-1][ChoosenPath[i+1]-1][1];
         speed = max(MaxSpeed,v);
         result+= length/speed;
     }
@@ -582,7 +582,7 @@ void PlanSelectTotal(vector<ListNode*  > crossNodeVector, vector<vector<int> > c
             printf("the PlanTime is %d\n",PlanTime);
             printf("the isCrowdes is %d\n",isRoadCrowded(RoadStatus,AvaiablePath[i][choose]));
 */
-            if((carData[i][5]==-1)&&PlanTime<=CurrentTime&&(!isRoadCrowded(RoadStatus,AvaiablePath[i][choose]))){//出发时间满足要求，并且道路不拥挤的话，
+            if((carData[i][5]==-1)&&PlanTime<=CurrentTime&&(!isRoadCrowded(&RoadStatus,AvaiablePath[i][choose]))){//出发时间满足要求，并且道路不拥挤的话，
                                             //需要加一个道路拥挤度判断函数，后期可以改成调度函数，用调度函数判断是否死锁
                 (*PlanPath)[i].push_back(carId);
                 (*PlanPath)[i].push_back(CurrentTime);//出发时间为当前时刻
@@ -600,7 +600,7 @@ void PlanSelectTotal(vector<ListNode*  > crossNodeVector, vector<vector<int> > c
                 cout<<endl;
                 */
                 RoadStatusUpdate(&RoadStatus, CrossPath);//更新道路状况
-                int thisCarRunTime = RunTime(RoadStatus,CrossPath,carData[i][3]);//计算当前车辆跑完需要多久
+                int thisCarRunTime = RunTime(&RoadStatus,CrossPath,carData[i][3]);//计算当前车辆跑完需要多久
                 if(thisCarRunTime>MaxCostTime){
                     MaxCostTime = thisCarRunTime;
                 }
@@ -710,9 +710,9 @@ bool txtDataWrite(string answerPath,vector<vector<int > > PlanPath){
 int main()
 {
     //输入文件的路径，包括车辆，道路，交叉口信息，以及输出文件
-    string carPath = "F:\\比赛\\19年华为软件精英挑战赛\\config\\car.txt";
-    string roadPath = "F:\\比赛\\19年华为软件精英挑战赛\\config\\road.txt";
-    string crossPath = "F:\\比赛\\19年华为软件精英挑战赛\\config\\cross.txt";
+    string carPath = "F:\\比赛\\19年华为软件精英挑战赛\\1-map-training-1\\car.txt";
+    string roadPath = "F:\\比赛\\19年华为软件精英挑战赛\\1-map-training-1\\road.txt";
+    string crossPath = "F:\\比赛\\19年华为软件精英挑战赛\\1-map-training-1\\cross.txt";
     string answerPath = "F:\\比赛\\19年华为软件精英挑战赛\\1-map-training-1\\answer.txt";
 
     //建立二维数组存储汽车信息，路口信息，交叉口信息，以及规划的路线
