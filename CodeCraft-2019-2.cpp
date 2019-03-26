@@ -17,10 +17,31 @@ void dataShow(vector<vector<int> > arr){
     printf("the content of %s is:\n",VNAME(arr));
     printf("(%d,%d)\n",row, arr[0].size());
     for(int i=0;i<row;i++){
+
         for(int j=0;j<arr[i].size();j++){
             printf("%d  ",arr[i][j]);
         }
         printf("\n");
+    }
+}
+void dataShow3D(vector<vector<vector<int > > > arr){
+//用于查看二维向量内容
+    if(arr.empty()){
+        printf("the content of %s is empty:\n",VNAME(arr));
+        return;
+    }
+    int row = arr.size();
+    printf("the content of %s is:\n",VNAME(arr));
+    printf("(%d,%d)\n",row, arr[0].size());
+    for(int i=0;i<row;i++){
+        printf("%d\n",i);
+        for(int j=0;j<arr[i].size();j++){
+            printf("%d:",j);
+            for(int k=0;k<arr[i][j].size();k++){
+                printf("%d ",arr[i][j][k]);
+            }
+            printf("\n");
+        }
     }
 }
 
@@ -371,11 +392,8 @@ void PlanSelectRandom(vector<ListNode*  > crossNodeVector, vector<vector<int> > 
     }
 }
 
-void RoadStatusUpdate(vector<int> *RoadStatus, vector<int> CarPath){
-//用节点形式的路径
 
-}
-void PlanSelectRandom(vector<ListNode*  > crossNodeVector, vector<vector<int> > carData,
+void PlanSelectIndivual(vector<ListNode*  > crossNodeVector, vector<vector<int> > carData,
                       vector<vector<vector<int> > > AvaiablePath,vector<vector<int > > *PlanPath){
 //选择最后的方案，不考虑整体，只考虑每辆车的最短时间
     int carNum = carData.size();
@@ -409,9 +427,204 @@ void PlanSelectRandom(vector<ListNode*  > crossNodeVector, vector<vector<int> > 
         CrossPath = AvaiablePath[i][choose];
         //将路径由节点形式转换为边的形式
         crossPath2RoadPath(crossNodeVector, CrossPath, &RoadPath);
-        (*PlanPath)[i].insert((*PlanPath)[i].end(), RoadPath.begin(), RoadPath.end());
+        (*PlanPath)[i].insert((*PlanPath)[i].end(), RoadPath.begin(), RoadPath.end());//将当前选择的路径加入的计划列表里
         vector<int>().swap(RoadPath);
     }
+}
+
+bool carInGarbage(vector<vector<int> > *carData){
+    int result = 1;
+    for(int i=0;i<(*carData).size();i++){
+        if((*carData)[i][5]==-1){// -1标志意味着没出发
+            return true;
+        }
+    }
+    return false;
+}
+bool isRoadCrowded(vector<vector<vector<int > > > RoadStatus, vector<int> ChoosenPath){//这里只需要判断如果增加一条路径会不会拥堵
+    float load = 0.0;
+    float threahold = 0.5;
+    int capacity;
+    int RoadCarNum =0;//道路长度，最大限速，通道数，车辆数，拥挤程度
+    /*
+    //cout<<RoadStatus[29][35][1]<<endl;
+    for(int i=0;i<ChoosenPath.size();i++){
+        printf("the node is:%d\t",ChoosenPath[i]);
+    }
+    cout<<endl;
+    */
+    for(int i=0;i<ChoosenPath.size()-1;i++){
+        //printf("i:%d\n",i);
+        capacity = RoadStatus[ChoosenPath[i]-1][ChoosenPath[i+1]-1][0]*RoadStatus[ChoosenPath[i]-1][ChoosenPath[i+1]-1][2];
+        RoadCarNum = RoadStatus[ChoosenPath[i]-1][ChoosenPath[i+1]-1][3]+1;
+        load = (float)RoadCarNum/capacity;
+        //printf("i:%d,the start is:%d the end is:%d\n",i,ChoosenPath[i],ChoosenPath[i+1]);
+        //printf("the capacity is:%d the load is:%f\n",capacity,load);
+        if(load>threahold){
+            return true;
+        }
+    }
+    return false;
+}
+//这个函数不受路口id与在节点中存储位置的影响
+void RoadStatusInit(vector<vector<vector<int > > > *RoadStatus, vector<ListNode*  > crossNodeVector){
+    int crossNodeNum = crossNodeVector.size();
+    (*RoadStatus).resize(crossNodeNum);
+    //输入节点信息
+    for(int i=0;i<crossNodeNum;i++){
+        (*RoadStatus)[i].resize(crossNodeNum);//记录有i结点指向j结点的情况
+        for(int j=0;j<crossNodeNum;j++){
+            (*RoadStatus)[i][j].resize(5);
+            //先初始化
+            for(int k=0;k<5;k++){
+                (*RoadStatus)[i][j][k] = 0;//道路长度，最大限速，通道数，车辆数，拥挤程度
+            }
+            //如果i到j有路径，上下左右都有可能
+            if((crossNodeVector[i]->UpCross)&&(crossNodeVector[i]->UpCross->crossNumber == crossNodeVector[j]->crossNumber)){
+                (*RoadStatus)[i][j][0] = crossNodeVector[i]->UpRoadLength;
+                (*RoadStatus)[i][j][1] = crossNodeVector[i]->UpRoadMaxSpeed;
+                (*RoadStatus)[i][j][2] = crossNodeVector[i]->UpRoadChannel;
+            }else if((crossNodeVector[i]->RightCross)&&(crossNodeVector[i]->RightCross->crossNumber == crossNodeVector[j]->crossNumber)){
+                (*RoadStatus)[i][j][0] = crossNodeVector[i]->RightRoadLength;
+                (*RoadStatus)[i][j][1] = crossNodeVector[i]->RightRoadMaxSpeed;
+                (*RoadStatus)[i][j][2] = crossNodeVector[i]->RightRoadChannel;
+            }else if((crossNodeVector[i]->DownCross)&&(crossNodeVector[i]->DownCross->crossNumber == crossNodeVector[j]->crossNumber)){
+                (*RoadStatus)[i][j][0] = crossNodeVector[i]->DownRoadLength;
+                (*RoadStatus)[i][j][1] = crossNodeVector[i]->DownRoadMaxSpeed;
+                (*RoadStatus)[i][j][2] = crossNodeVector[i]->DownRoadChannel;
+            }else if((crossNodeVector[i]->LeftCross)&&(crossNodeVector[i]->LeftCross->crossNumber == crossNodeVector[j]->crossNumber)){
+                (*RoadStatus)[i][j][0] = crossNodeVector[i]->LeftRoadLength;
+                (*RoadStatus)[i][j][1] = crossNodeVector[i]->LeftRoadMaxSpeed;
+                (*RoadStatus)[i][j][2] = crossNodeVector[i]->LeftRoadChannel;
+            }
+
+        }
+    }
+
+
+
+}
+
+void RoadStatusUpdate(vector<vector<vector<int > > > *RoadStatus, vector<int> ChoosenPath){//更新增加路线后的道路信息
+//用节点形式的路径
+    //printf("Update the RoadStatus\n");
+    for(int i=0;i<ChoosenPath.size()-1;i++){
+        //capacity = (*RoadStatus)[ChoosenPath[i]][ChoosenPath[i+1]][0]*(*RoadStatus)[ChoosenPath[i]][ChoosenPath[i+1]][2]
+        (*RoadStatus)[ChoosenPath[i]-1][ChoosenPath[i+1]-1][3]++;
+    }
+   // printf("Update the RoadStatus Completed\n");
+}
+
+void RoadStatusClear(vector<vector<vector<int > > > *RoadStatus){
+    int crossNodeNum = (*RoadStatus).size();//清空车辆数和拥挤程度
+    for(int i=0;i<crossNodeNum;i++){
+        for(int j=0;j<crossNodeNum;j++){
+            (*RoadStatus)[i][j][3] = 0;//道路长度，最大限速，通道数，车辆数，拥挤程度
+            (*RoadStatus)[i][j][4] = 0;//
+        }
+    }
+
+}
+int RunTime(vector<vector<vector<int > > >RoadStatus, vector<int> ChoosenPath, int v){//输入的路径是节点形式的
+    int result = 1;
+    int length = 1;
+    int speed = 1;
+    int MaxSpeed = 1;
+    for(int i=0;i<ChoosenPath.size()-1;i++){
+        length = RoadStatus[ChoosenPath[i]-1][ChoosenPath[i+1]-1][0];
+        MaxSpeed = RoadStatus[ChoosenPath[i]-1][ChoosenPath[i+1]-1][1];
+        speed = max(MaxSpeed,v);
+        result+= length/speed;
+    }
+    return result;
+}
+void PlanSelectTotal(vector<ListNode*  > crossNodeVector, vector<vector<int> > carData,
+                      vector<vector<vector<int> > > AvaiablePath,vector<vector<int > > *PlanPath){
+//选择最后的方案，考虑道路拥挤度
+    int carNum = carData.size();
+    (*PlanPath).resize(carNum);
+    int carId = 0;
+    int PlanTime = 0;
+    int choose = 0;
+    //找到最早的出发时间，以及最晚的出发时间，同时给车增加一个标志位，-1表示未发车，
+    int PlanTimeMin = carData[0][4];
+    int PlanTimeMax = carData[0][4];
+    for(int i=0;i<carData.size();i++){
+        if(carData[i][4]<PlanTimeMin){
+            PlanTimeMin = carData[i][4];
+        }
+        if(carData[i][4]>PlanTimeMax){
+            PlanTimeMax = carData[i][4];
+        }
+        carData[i].push_back(-1);//往【5】放是否出发的标记 -1 表示在车库，0表示在路上，1表示已到达
+    }
+    int CurrentTime = PlanTimeMin;//当前时刻
+    int LeaveTime = PlanTimeMin;//实际出发时间
+    //建立道路状态矩阵
+    vector<vector<vector<int > > > RoadStatus;
+    RoadStatusInit(&RoadStatus,crossNodeVector);
+    //
+    //cout<<"RoadStatusInit"<<endl;
+    //dataShow3D(RoadStatus);
+    vector<int> CrossPath;
+    vector<int> RoadPath;
+    //int MaxCostTime = 0;
+    while(carInGarbage(&carData)){//当车库里有车的时候,也就是还有车没出发
+        int MaxCostTime = 1;
+        for(int i=0;i<carNum;i++){//得确定这个车有没有出发
+
+            carId =carData[i][0];
+            PlanTime = carData[i][4];//获取当前车辆的计划出发时间，如果计划出发时间小于或等于当前时间那么可以出发
+            choose = 0;//默认选择最短路径发车
+/*
+            printf("the carStatus is %d\n",carData[i][5]);
+            printf("the carId is %d\n",carId);
+            printf("the PlanTime is %d\n",PlanTime);
+            printf("the isCrowdes is %d\n",isRoadCrowded(RoadStatus,AvaiablePath[i][choose]));
+*/
+            if((carData[i][5]==-1)&&PlanTime<=CurrentTime&&(!isRoadCrowded(RoadStatus,AvaiablePath[i][choose]))){//出发时间满足要求，并且道路不拥挤的话，
+                                            //需要加一个道路拥挤度判断函数，后期可以改成调度函数，用调度函数判断是否死锁
+                (*PlanPath)[i].push_back(carId);
+                (*PlanPath)[i].push_back(CurrentTime);//出发时间为当前时刻
+                CrossPath = AvaiablePath[i][choose];
+                crossPath2RoadPath(crossNodeVector, CrossPath, &RoadPath);
+                (*PlanPath)[i].insert((*PlanPath)[i].end(), RoadPath.begin(), RoadPath.end());//将当前选择的路径加入的计划列表里
+                vector<int>().swap(RoadPath);
+                carData[i][5] = 0;
+                //dataShow(*PlanPath);
+                //计算所选路线需要多久才能运行完，并且更新最大时间
+                /*
+                for(int j=0;j<CrossPath.size();j++){
+                    printf("%d\t",CrossPath[j]);
+                }
+                cout<<endl;
+                */
+                RoadStatusUpdate(&RoadStatus, CrossPath);//更新道路状况
+                int thisCarRunTime = RunTime(RoadStatus,CrossPath,carData[i][3]);//计算当前车辆跑完需要多久
+                if(thisCarRunTime>MaxCostTime){
+                    MaxCostTime = thisCarRunTime;
+                }
+            }
+        }
+        //完成一轮发车后，时间往后推，清空道路状态
+        RoadStatusClear(&RoadStatus);
+        CurrentTime += MaxCostTime;
+    }
+    /*
+    for(int i=0;i<carNum;i++){
+        carId =carData[i][0];
+        PlanTime = carData[i][4];
+        (*PlanPath)[i].push_back(carId);
+        (*PlanPath)[i].push_back(PlanTime+2*i);//出发时间
+        //选择每辆车的最短路径
+        choose = 0;
+        CrossPath = AvaiablePath[i][choose];
+        //将路径由节点形式转换为边的形式
+        crossPath2RoadPath(crossNodeVector, CrossPath, &RoadPath);
+        (*PlanPath)[i].insert((*PlanPath)[i].end(), RoadPath.begin(), RoadPath.end());//将当前选择的路径加入的计划列表里
+        vector<int>().swap(RoadPath);
+    }
+    */
 }
 
 //将路线转换为期待的输出格式
@@ -491,23 +704,6 @@ bool txtDataWrite(string answerPath,vector<vector<int > > PlanPath){
 }
 
 
-void dataShow3D(vector<vector<vector<int > > > arr){
-//用于查看二维向量内容
-    if(arr.empty()){
-        return;
-    }
-    int row = arr.size();
-    printf("the content of %s is:\n",VNAME(arr));
-    printf("(%d,%d)\n",row, arr[0].size());
-    for(int i=0;i<row;i++){
-        for(int j=0;j<arr[i].size();j++){
-            for(int k=0;k<arr[i][j].size();k++){
-                printf("%d ",arr[i][j][k]);
-            }
-            printf("\n");
-        }
-    }
-}
 
 
 
@@ -545,8 +741,10 @@ int main()
     carPlanSearch(carData, crossNodeVector, &AvaiablePath, &PathDict);
 //进行路径规划
 	vector<vector<int > > PlanPath;
-	PlanSelectIndivual(crossNodeVector, carData, AvaiablePath, &PlanPath);
-   // dataShow3D(AvaiablePath);
+	//dataShow(carData);
+	PlanSelectTotal(crossNodeVector, carData, AvaiablePath, &PlanPath);
+	dataShow(PlanPath);
+    //dataShow(AvaiablePath[0]);
 
 /*
     vector<vector<int > > PathTest;

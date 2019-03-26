@@ -265,7 +265,7 @@ void PlanSelectRandom(vector<ListNode*  > crossNodeVector, vector<vector<int> > 
         carId =carData[i][0];
         PlanTime = carData[i][4];
         (*PlanPath)[i].push_back(carId);
-        (*PlanPath)[i].push_back(PlanTime+2*i);
+        (*PlanPath)[i].push_back(PlanTime+3*(i/8));
         //开始随机选路径
         choose = rand()%AvaiablePath[i].size();
         //CrossPath.insert(CrossPath.begin(),AvaiablePath[i][choose].begin(),AvaiablePath[i][choose].end());
